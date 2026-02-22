@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime
 import random
 import string
@@ -9,11 +10,19 @@ import os
 
 app = FastAPI()
 
+# ✅ CORS FIX (IMPORTANT for React frontend)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # You can restrict later
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # 🔐 MongoDB Atlas Connection
 MONGO_URI = "mongodb+srv://MANOJ:Manoj%402003@cluster0.m9rnn0j.mongodb.net/?appName=Cluster0"
 
 client = MongoClient(MONGO_URI)
-
 
 db = client["patient_db"]
 collection = db["patient_records"]
@@ -52,7 +61,7 @@ def auto_generate():
             break
 
         records = []
-        for _ in range(2):  # 2 per minute
+        for _ in range(2):
             if collection.count_documents({}) < MAX_RECORDS:
                 records.append(generate_record())
 
@@ -60,7 +69,7 @@ def auto_generate():
             collection.insert_many(records)
             print("Inserted:", len(records))
 
-        time.sleep(60)  # 1 minute interval
+        time.sleep(60)
 
 # Start background generator thread
 threading.Thread(target=auto_generate, daemon=True).start()
